@@ -1,0 +1,33 @@
+[
+    {
+      "invoiceId": "INV-A-001",
+      "vendor": "Supplier GmbH",
+      "fields": {
+        "invoiceNumber": "INV-2024-001",
+        "serviceDate": null
+      },
+      "rawText": "Leistungsdatum: 01.01.2024"
+    },
+    
+    {
+      "invoiceId": "INV-B-001",
+      "vendor": "Parts AG",
+      "fields": {
+        "invoiceNumber":"PA-7781",
+        "serviceDate": null
+      },
+      "rawText":  "Prices incl. VAT"
+    },
+
+    {
+        "invoiceId": "INV-C-001",
+        "vendor": "Freight & Co",
+        "fields": {
+          "invoiceNumber": "FC-1001",
+          "serviceDate": null
+        },
+        "rawText": "2% Skonto if paid within 10 days. Service: Seefracht"
+      }
+      
+  ]
+  

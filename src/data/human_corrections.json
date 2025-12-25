@@ -1,0 +1,49 @@
+[
+    {
+      "invoiceId": "INV-A-001",
+      "vendor": "Supplier GmbH",
+      "corrections": [
+        {
+          "field": "serviceDate",
+          "from": null,
+          "to": "2024-01-01",
+          "reason": "Leistungsdatum found in raw text"
+        }
+      ],
+      "finalDecision": "approved"
+    },
+    {
+      "invoiceId": "INV-B-001",
+      "vendor": "Parts AG",
+      "corrections": [
+        {
+          "field": "taxTotal",
+          "from": 400,
+          "to": 380,
+          "reason": "VAT included in total; recalculated"
+        }
+      ],
+      "finalDecision": "approved"
+    },
+    {
+        "invoiceId": "INV-C-001",
+        "vendor": "Freight & Co",
+        "corrections": [
+          {
+            "field": "discountTerms",
+            "from": null,
+            "to": "2% Skonto within 10 days",
+            "reason": "Skonto terms in raw text"
+          },
+          {
+            "field": "lineItems[0].sku",
+            "from": null,
+            "to": "FREIGHT",
+            "reason": "Vendor uses Seefracht/Shipping for FREIGHT"
+          }
+        ],
+        "finalDecision": "approved"
+      }
+      
+  ]
+  
