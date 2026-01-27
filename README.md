@@ -176,6 +176,5 @@ npx ts-node src/index.ts
 ## Author
 
 **Shailender**
-AI Agent Development Intern Assignment
-Flowbit Private Limited
+AI Agent Development 
 
