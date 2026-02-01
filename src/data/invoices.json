@@ -1,33 +1,191 @@
 [
-    {
-      "invoiceId": "INV-A-001",
-      "vendor": "Supplier GmbH",
-      "fields": {
-        "invoiceNumber": "INV-2024-001",
-        "serviceDate": null
-      },
-      "rawText": "Leistungsdatum: 01.01.2024"
+  {
+    "invoiceId": "INV-A-001",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-001",
+      "serviceDate": null
     },
-    
-    {
-      "invoiceId": "INV-B-001",
-      "vendor": "Parts AG",
-      "fields": {
-        "invoiceNumber":"PA-7781",
-        "serviceDate": null
-      },
-      "rawText":  "Prices incl. VAT"
-    },
+    "rawText": "Leistungsdatum: 01.01.2024"
+  },
 
-    {
-        "invoiceId": "INV-C-001",
-        "vendor": "Freight & Co",
-        "fields": {
-          "invoiceNumber": "FC-1001",
-          "serviceDate": null
-        },
-        "rawText": "2% Skonto if paid within 10 days. Service: Seefracht"
-      }
-      
-  ]
-  
+  {
+    "invoiceId": "INV-A-001",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-001",
+      "serviceDate": null
+    },
+    "rawText": "Service date: 01.01.2024"
+  },
+
+  {
+    "invoiceId": "INV-A-002",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-002",
+      "serviceDate": null
+    },
+    "rawText": "Leistungsdatum: 15.01.2024"
+  },
+
+  {
+    "invoiceId": "INV-A-002",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-002",
+      "serviceDate": null
+    },
+    "rawText": "Service period starting 15.01.2024"
+  },
+
+  {
+    "invoiceId": "INV-A-003",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-003",
+      "serviceDate": null
+    },
+    "rawText": "Leistungsdatum: 20.01.2024"
+  },
+
+  {
+    "invoiceId": "INV-A-004",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-003",
+      "serviceDate": null
+    },
+    "rawText": "Leistungsdatum: 20.01.2024 (duplicate copy)"
+  },
+
+  {
+    "invoiceId": "INV-B-001",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7781",
+      "serviceDate": null
+    },
+    "rawText": "Prices incl. VAT"
+  },
+
+  {
+    "invoiceId": "INV-B-001",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7781",
+      "serviceDate": null
+    },
+    "rawText": "MwSt. inkl. 19%"
+  },
+
+  {
+    "invoiceId": "INV-B-002",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7799",
+      "serviceDate": null
+    },
+    "rawText": "Invoice date: 20-02-2024"
+  },
+
+  {
+    "invoiceId": "INV-B-003",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7810",
+      "serviceDate": null
+    },
+    "rawText": "Currency: EUR"
+  },
+
+  {
+    "invoiceId": "INV-B-003",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7810",
+      "serviceDate": null
+    },
+    "rawText": "Total amount: 1190 EUR"
+  },
+
+  {
+    "invoiceId": "INV-C-001",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1001",
+      "serviceDate": null
+    },
+    "rawText": "2% Skonto if paid within 10 days"
+  },
+
+  {
+    "invoiceId": "INV-C-001",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1001",
+      "serviceDate": null
+    },
+    "rawText": "Service: Transport charges"
+  },
+
+  {
+    "invoiceId": "INV-C-002",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1002",
+      "serviceDate": null
+    },
+    "rawText": "Service: Seefracht / Shipping"
+  },
+
+  {
+    "invoiceId": "INV-C-003",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1003",
+      "serviceDate": null
+    },
+    "rawText": "Fuel surcharge applied"
+  },
+
+  {
+    "invoiceId": "INV-C-004",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1004",
+      "serviceDate": null
+    },
+    "rawText": "Delivery confirmation pending"
+  },
+
+  {
+    "invoiceId": "INV-GEN-001",
+    "vendor": "Supplier GmbH",
+    "fields": {
+      "invoiceNumber": "INV-2024-010",
+      "serviceDate": null
+    },
+    "rawText": "Leistungsdatum: 05.04.2024"
+  },
+
+  {
+    "invoiceId": "INV-GEN-002",
+    "vendor": "Parts AG",
+    "fields": {
+      "invoiceNumber": "PA-7850",
+      "serviceDate": null
+    },
+    "rawText": "Prices exclude transport charges"
+  },
+
+  {
+    "invoiceId": "INV-GEN-003",
+    "vendor": "Freight & Co",
+    "fields": {
+      "invoiceNumber": "FC-1010",
+      "serviceDate": null
+    },
+    "rawText": "Service period: April 2024"
+  }
+]
