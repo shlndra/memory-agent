@@ -41,7 +41,9 @@ Learn from Human Feedback
 
 - Node.js  
 - TypeScript (strict mode)  
-- SQLite (persistent memory store)  
+- SQLite (persistent memory store)
+- JavaScript (in New update)
+ 
 
 ---
 
