@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory Agent — My Dashboard</title>
+<meta name="description" content="Upload and process invoices with the Memory Agent AI engine." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:       #0a0c10;
+    --paper:     #f5f3ee;
+    --cream:     #ede9e0;
+    --grid:      #e0dcd3;
+    --accent:    #c8401a;
+    --accent2:   #2563a8;
+    --gold:      #c9952a;
+    --green:     #1d7a4e;
+    --muted:     #7a7568;
+    --card:      #faf9f6;
+    --border:    #d4cfc5;
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+    --display:   'Syne', sans-serif;
+    --shadow:    0 2px 12px rgba(10,12,16,.08), 0 1px 3px rgba(10,12,16,.06);
+    --shadow-lg: 0 8px 32px rgba(10,12,16,.12), 0 2px 8px rgba(10,12,16,.08);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    background: var(--ink);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-eye {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 16px rgba(200,64,26,.4);
+  }
+  .topbar-eye::after {
+    content: '';
+    width: 12px; height: 12px;
+    background: var(--paper);
+    border-radius: 50%;
+  }
+
+  .topbar-title {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--paper);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(245,243,238,.08);
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: rgba(245,243,238,.6);
+  }
+
+  .user-badge .dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .btn-logout {
+    padding: 6px 16px;
+    border: 1px solid rgba(245,243,238,.15);
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(245,243,238,.5);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-logout:hover {
+    background: rgba(200,64,26,.2);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+
+  /* ─── MAIN ─── */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .page-title {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .page-desc {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  /* ─── UPLOAD ZONE ─── */
+  .upload-section {
+    margin-bottom: 40px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    background: var(--card);
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+  }
+
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(200,64,26,.03);
+  }
+
+  .upload-zone.dragover {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 4px rgba(200,64,26,.1);
+  }
+
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: .6;
+  }
+
+  .upload-title {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .upload-hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 24px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: 0 4px 12px rgba(200,64,26,.3);
+  }
+  .upload-btn:hover {
+    background: #b03415;
+    transform: translateY(-1px);
+  }
+
+  .upload-btn.loading {
+    pointer-events: none;
+    opacity: .7;
+  }
+
+  input[type="file"] { display: none; }
+
+  /* ─── VENDOR INPUT ─── */
+  .vendor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+  }
+
+  .vendor-input {
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--sans);
+    width: 240px;
+    background: var(--card);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .vendor-input:focus { border-color: var(--accent); }
+
+  .vendor-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  /* ─── RESULT PANEL ─── */
+  .result-panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    animation: slideUp .4s ease;
+  }
+
+  .result-panel.visible { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    padding: 16px 24px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-title {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .result-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .result-status.auto { background: rgba(29,122,78,.2); color: #2dd47a; }
+  .result-status.review { background: rgba(201,149,42,.2); color: #e5b84a; }
+  .result-status.duplicate { background: rgba(200,64,26,.2); color: #f07050; }
+
+  .result-body {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .result-col h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cream);
+    font-size: 13px;
+  }
+
+  .field-key {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .field-val {
+    font-weight: 500;
+    text-align: right;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .confidence-bar-wrap {
+    margin-top: 12px;
+  }
+
+  .confidence-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .confidence-bar {
+    height: 8px;
+    background: var(--cream);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .6s ease;
+  }
+
+  .correction-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(200,64,26,.08);
+    border: 1px solid rgba(200,64,26,.15);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--accent);
+    margin: 0 4px 6px 0;
+  }
+
+  .raw-text-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--cream);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ─── HISTORY TABLE ─── */
+  .history-section {
+    margin-bottom: 40px;
+  }
+
+  .history-table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .history-table thead {
+    background: var(--cream);
+  }
+
+  .history-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .history-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--cream);
+    vertical-align: middle;
+  }
+
+  .history-table tr:last-child td { border-bottom: none; }
+
+  .history-table tr:hover td { background: rgba(200,64,26,.02); }
+
+  .status-pill {
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+  }
+  .status-pill.auto { background: rgba(29,122,78,.1); color: var(--green); }
+  .status-pill.review { background: rgba(201,149,42,.1); color: var(--gold); }
+  .status-pill.duplicate { background: rgba(200,64,26,.1); color: var(--accent); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+  }
+
+  .empty-state .empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: .5;
+  }
+
+  /* ─── LOADING SPINNER ─── */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .result-body { grid-template-columns: 1fr; }
+    .topbar { padding: 0 16px; }
+    .main { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── TOPBAR ─── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-eye"></div>
+    <span class="topbar-title">Memory Agent</span>
+  </div>
+  <div class="topbar-right">
+    <div class="user-badge">
+      <span class="dot"></span>
+      <span id="user-name">—</span>
+    </div>
+    <div class="user-badge" id="api-status" style="margin-right:8px; border-color: rgba(200,64,26,.3);">
+      <span class="dot" style="background:var(--muted); box-shadow:none;"></span>
+      <span style="font-size:10px;">API: Disconnected</span>
+    </div>
+    <button class="btn-logout" id="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- ─── MAIN CONTENT ─── -->
+<div class="main">
+  <h1 class="page-title">Invoice Processor</h1>
+  <p class="page-desc">Upload PDF or image invoices to extract data and check for errors with the Memory Agent engine</p>
+
+  <!-- Upload Zone -->
+  <div class="upload-section">
+    <div class="section-label">📤 Upload Invoice</div>
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Drop your PDF or image here</div>
+      <div class="upload-hint">or click to browse · PDF, JPG, PNG up to 10MB</div>
+      <button class="upload-btn" type="button" id="upload-btn">
+        <span id="upload-btn-text">Choose File</span>
+      </button>
+      <div class="vendor-row">
+        <span class="vendor-label">Vendor (optional):</span>
+        <input type="text" class="vendor-input" id="vendor-input" placeholder="e.g. Supplier GmbH" />
+      </div>
+      <input type="file" id="file-input" accept=".pdf,application/pdf,image/jpeg,image/png,image/webp" />
+    </div>
+  </div>
+
+  <!-- Result Panel (hidden until upload) -->
+  <div class="result-panel" id="result-panel">
+    <div class="result-header">
+      <span class="result-title" id="result-filename">—</span>
+      <span class="result-status" id="result-status">—</span>
+    </div>
+    <div class="result-body">
+      <div class="result-col">
+        <h3>Extracted Fields</h3>
+        <div id="extracted-fields"></div>
+
+        <div class="confidence-bar-wrap">
+          <div class="confidence-label-row">
+            <span>Confidence</span>
+            <span id="confidence-pct">0%</span>
+          </div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confidence-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="result-col">
+        <h3>Memory Agent Analysis</h3>
+        <div id="corrections-area"></div>
+        <div id="reasoning-area" style="margin-top:12px;font-size:13px;color:var(--muted)"></div>
+        <h3 style="margin-top:20px">Raw Text Preview</h3>
+        <div class="raw-text-preview" id="raw-text-preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section">
+    <div class="section-label">📋 Your Invoice History</div>
+    <div class="history-table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Filename</th>
+            <th>Vendor</th>
+            <th>Invoice #</th>
+            <th>Confidence</th>
+            <th>Status</th>
+            <th>Uploaded</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+          <tr><td colspan="6" class="empty-state">
+            <div class="empty-icon">📭</div>
+            No invoices yet. Upload your first invoice above!
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5050';
+const token = localStorage.getItem('token');
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+/* ════════════════════════════════════════════
+   AUTH CHECK
+════════════════════════════════════════════ */
+if (!token) {
+  window.location.href = 'login.html';
+}
+
+document.getElementById('user-name').textContent = user.username || user.email || '—';
+
+function logout() {
+  fetch(`${API}/api/auth/logout`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  }).finally(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+/* ════════════════════════════════════════════
+   FILE UPLOAD HANDLING
+════════════════════════════════════════════ */
+const zone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+const uploadBtn = document.getElementById('upload-btn');
+
+// Click to browse
+uploadBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fileInput.click();
+});
+zone.addEventListener('click', () => fileInput.click());
+
+// Drag & drop
+zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    handleFileUpload(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFileUpload(fileInput.files[0]);
+});
+
+async function handleFileUpload(file) {
+  const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+  const isAllowed = allowedExts.some(ext => file.name.toLowerCase().endsWith(ext));
+  
+  if (!file || !isAllowed) {
+    alert('Please select a PDF or image file (JPG, PNG, WEBP).');
+    return;
+  }
+
+  const vendor = document.getElementById('vendor-input').value.trim();
+  const btn = document.getElementById('upload-btn');
+  const btnText = document.getElementById('upload-btn-text');
+
+  btn.classList.add('loading');
+  btnText.innerHTML = '<span class="spinner"></span> Processing…';
+
+  try {
+    const formData = new FormData();
+    formData.append('invoice', file);
+    if (vendor) formData.append('vendor', vendor);
+
+    const resp = await fetch(`${API}/api/upload-invoice`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+
+    const data = await resp.json();
+
+    btn.classList.remove('loading');
+    btnText.textContent = 'Choose File';
+
+    if (!resp.ok) {
+      alert(data.error || 'Upload failed');
+      return;
+    }
+
+    showResult(data);
+    loadHistory();
+
+  } catch (err) {
+    btn.classList.remove('loading');
+    btnText.textContent = 'Choose File';
+    alert('Upload failed. Make sure the API server is running.');
+  }
+}
+
+/* ════════════════════════════════════════════
+   DISPLAY RESULT
+════════════════════════════════════════════ */
+function showResult(data) {
+  const panel = document.getElementById('result-panel');
+  panel.classList.add('visible');
+
+  document.getElementById('result-filename').textContent = data.filename;
+
+  const statusEl = document.getElementById('result-status');
+  const status = data.memoryAgent.status;
+  statusEl.textContent = status === 'auto' ? '✓ Auto-Approved' : status === 'duplicate' ? '⊘ Duplicate' : '⚠ Needs Review';
+  statusEl.className = 'result-status ' + status;
+
+  // Extracted fields
+  const fieldsDiv = document.getElementById('extracted-fields');
+  fieldsDiv.innerHTML = '';
+  const fields = data.extractedFields || {};
+  for (const [key, val] of Object.entries(fields)) {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `<span class="field-key">${key}</span><span class="field-val">${val || '—'}</span>`;
+    fieldsDiv.appendChild(row);
+  }
+
+  // Confidence
+  const pct = Math.round((data.memoryAgent.confidence || 0) * 100);
+  document.getElementById('confidence-pct').textContent = pct + '%';
+  const fill = document.getElementById('confidence-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--accent)';
+
+  // Corrections
+  const corrDiv = document.getElementById('corrections-area');
+  const corrections = data.memoryAgent.corrections || [];
+  if (corrections.length) {
+    corrDiv.innerHTML = corrections.map(c => `<span class="correction-chip">${c}</span>`).join('');
+  } else {
+    corrDiv.innerHTML = '<span style="color:var(--muted);font-size:13px">No corrections suggested</span>';
+  }
+
+  // Reasoning
+  document.getElementById('reasoning-area').textContent = data.memoryAgent.reasoning || '';
+
+  // Raw text
+  document.getElementById('raw-text-preview').textContent = data.rawTextPreview || '(no text extracted)';
+
+  // Scroll to result
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ════════════════════════════════════════════
+   LOAD HISTORY
+════════════════════════════════════════════ */
+async function loadHistory() {
+  try {
+    const resp = await fetch(`${API}/api/my-invoices`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await resp.json();
+    const tbody = document.getElementById('history-body');
+
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">
+        <div class="empty-icon">📭</div>No invoices yet. Upload your first invoice above!</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(inv => {
+      const confPct = Math.round((inv.confidence || 0) * 100);
+      const statusClass = inv.status || 'review';
+      const statusLabel = inv.status === 'auto' ? '✓ Auto' : inv.status === 'duplicate' ? '⊘ Dup' : '⚠ Review';
+      const date = inv.uploadedAt ? new Date(inv.uploadedAt + 'Z').toLocaleDateString() : '—';
+      return `<tr>
+        <td style="font-weight:500">${inv.filename || '—'}</td>
+        <td>${inv.vendor || '—'}</td>
+        <td><code style="font-family:var(--mono);font-size:12px">${inv.invoiceNumber || '—'}</code></td>
+        <td>${confPct}%</td>
+        <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+        <td style="color:var(--muted);font-size:12px">${date}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load history:', err);
+  }
+}
+
+async function checkApiStatus() {
+  const statusEl = document.getElementById('api-status');
+  const dot = statusEl.querySelector('.dot');
+  const text = statusEl.querySelector('span:last-child');
+  try {
+    const resp = await fetch(`${API}/`);
+    if (resp.ok) {
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow = '0 0 6px var(--green)';
+      text.textContent = 'API: Connected';
+    } else {
+      throw new Error();
+    }
+  } catch (err) {
+    dot.style.background = 'var(--accent)';
+    dot.style.boxShadow = '0 0 6px var(--accent)';
+    text.textContent = 'API: Offline';
+  }
+}
+
+// Load on page load
+loadHistory();
+checkApiStatus();
+setInterval(checkApiStatus, 10000);
+</script>
+</body>
+</html>

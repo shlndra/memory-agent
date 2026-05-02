@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory Agent — Invoice Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+  /* ─────────────── RESET + VARIABLES ─────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:       #0a0c10;
+    --paper:     #f5f3ee;
+    --cream:     #ede9e0;
+    --grid:      #e0dcd3;
+    --accent:    #c8401a;
+    --accent2:   #2563a8;
+    --gold:      #c9952a;
+    --green:     #1d7a4e;
+    --muted:     #7a7568;
+    --card:      #faf9f6;
+    --border:    #d4cfc5;
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+    --display:   'Syne', sans-serif;
+    --shadow:    0 2px 12px rgba(10,12,16,.08), 0 1px 3px rgba(10,12,16,.06);
+    --shadow-lg: 0 8px 32px rgba(10,12,16,.12), 0 2px 8px rgba(10,12,16,.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─────────────── BACKGROUND GRID ─────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: .45;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─────────────── LAYOUT ─────────────── */
+  .shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* ─────────────── SIDEBAR ─────────────── */
+  .sidebar {
+    grid-row: 1 / 3;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+
+  .brand-eye {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-eye::after {
+    content: '';
+    width: 14px; height: 14px;
+    background: var(--paper);
+    border-radius: 50%;
+  }
+
+  .brand-name {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    line-height: 1.2;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: rgba(245,243,238,.4);
+    font-family: var(--mono);
+    margin-top: 2px;
+    letter-spacing: .06em;
+  }
+
+  .sidebar-nav { padding: 20px 0; flex: 1; }
+
+  .nav-section {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: .12em;
+    color: rgba(245,243,238,.3);
+    padding: 12px 24px 6px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(245,243,238,.6);
+    border-left: 2px solid transparent;
+    transition: all .15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--paper); background: rgba(255,255,255,.04); }
+  .nav-item.active {
+    color: var(--paper);
+    background: rgba(200,64,26,.15);
+    border-left-color: var(--accent);
+  }
+  .nav-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-family: var(--mono);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-weight: 500;
+  }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: 11px;
+    font-family: var(--mono);
+    color: rgba(245,243,238,.25);
+  }
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
+  }
+
+  /* ─────────────── HEADER ─────────────── */
+  .topbar {
+    grid-column: 2;
+    background: rgba(245,243,238,.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 62px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .page-title { font-family: var(--display); font-size: 18px; font-weight: 700; }
+  .page-crumb { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--sans);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink);
+  }
+  .btn-outline:hover { background: var(--cream); border-color: var(--muted); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(200,64,26,.3);
+  }
+  .btn-primary:hover { background: #b03415; }
+
+  .search-box {
+    display: flex; align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    gap: 8px;
+    width: 220px;
+  }
+  .search-box input {
+    border: none; background: none;
+    font-size: 13px; font-family: var(--sans);
+    color: var(--ink); outline: none; width: 100%;
+  }
+  .search-box input::placeholder { color: var(--muted); }
+
+  /* ─────────────── MAIN CONTENT ─────────────── */
+  .main {
+    grid-column: 2;
+    padding: 28px 32px;
+    overflow-y: auto;
+  }
+
+  /* ─────────────── STAT CARDS ─────────────── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    animation: fadeUp .4s ease both;
+  }
+  .stat-card:nth-child(2) { animation-delay: .06s; }
+  .stat-card:nth-child(3) { animation-delay: .12s; }
+  .stat-card:nth-child(4) { animation-delay: .18s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card.red::before   { background: var(--accent); }
+  .stat-card.blue::before  { background: var(--accent2); }
+  .stat-card.gold::before  { background: var(--gold); }
+  .stat-card.green::before { background: var(--green); }
+
+  .stat-label {
+    font-size: 11px; font-family: var(--mono);
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: var(--display);
+    font-size: 36px; font-weight: 800;
+    line-height: 1; color: var(--ink);
+  }
+  .stat-sub {
+    font-size: 12px; color: var(--muted); margin-top: 6px;
+    font-family: var(--mono);
+  }
+  .stat-icon {
+    position: absolute; right: 18px; top: 18px;
+    font-size: 28px; opacity: .12;
+  }
+
+  /* ─────────────── PANELS ─────────────── */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: fadeUp .5s ease both;
+    animation-delay: .22s;
+  }
+
+  .panel-header {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title {
+    font-family: var(--display);
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .panel-actions { display: flex; gap: 8px; }
+
+  /* ─────────────── FILTER BAR ─────────────── */
+  .filter-bar {
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px; font-family: var(--mono);
+    cursor: pointer; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    transition: all .12s;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-chip.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff;
+  }
+  .filter-chip.blue.active {
+    background: var(--accent2); border-color: var(--accent2);
+  }
+  .filter-chip.green.active {
+    background: var(--green); border-color: var(--green);
+  }
+  .filter-chip.gold.active {
+    background: var(--gold); border-color: var(--gold);
+  }
+
+  /* ─────────────── TABLE ─────────────── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px; font-family: var(--mono);
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted);
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--ink); }
+  thead th .sort-arrow { margin-left: 4px; opacity: .4; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: var(--cream); }
+  tbody tr.selected { background: rgba(200,64,26,.05); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td { padding: 11px 14px; vertical-align: top; }
+
+  .invoice-id {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--accent); font-weight: 500;
+  }
+  .vendor-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 11px; font-weight: 500;
+    font-family: var(--mono);
+  }
+  .vendor-chip.supplier { background: rgba(37,99,168,.1); color: var(--accent2); }
+  .vendor-chip.parts    { background: rgba(201,149,42,.1); color: var(--gold); }
+  .vendor-chip.freight  { background: rgba(29,122,78,.1);  color: var(--green); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px; font-family: var(--mono);
+    font-weight: 500; white-space: nowrap;
+  }
+  .badge-review   { background: rgba(200,64,26,.1);  color: var(--accent); border: 1px solid rgba(200,64,26,.2); }
+  .badge-auto     { background: rgba(29,122,78,.1);   color: var(--green);  border: 1px solid rgba(29,122,78,.2); }
+  .badge-duplicate{ background: rgba(122,117,104,.1); color: var(--muted);  border: 1px solid var(--border); }
+  .badge-pending  { background: rgba(37,99,168,.1);   color: var(--accent2);border: 1px solid rgba(37,99,168,.2); }
+
+  .confidence-bar {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .conf-track {
+    flex: 1; height: 5px;
+    background: var(--cream);
+    border-radius: 3px; overflow: hidden;
+    min-width: 60px;
+  }
+  .conf-fill {
+    height: 100%; border-radius: 3px;
+    transition: width .6s ease;
+  }
+  .conf-label {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); width: 32px; text-align: right;
+  }
+
+  .corrections-list {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .corr-tag {
+    font-size: 10px; font-family: var(--mono);
+    padding: 1px 7px; border-radius: 3px;
+    background: var(--cream); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .corr-tag.active { background: rgba(200,64,26,.08); color: var(--accent); border-color: rgba(200,64,26,.2); }
+
+  /* ─────────────── MEMORY SIDEBAR ─────────────── */
+  .memory-panel { display: flex; flex-direction: column; gap: 0; }
+
+  .mem-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .mem-section:last-child { border-bottom: none; }
+  .mem-section-title {
+    font-size: 10px; font-family: var(--mono);
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .mem-section-title .count {
+    background: var(--cream); color: var(--muted);
+    padding: 1px 7px; border-radius: 10px;
+    font-size: 10px; margin-left: auto;
+  }
+
+  .mem-entry {
+    padding: 10px 12px;
+    background: var(--cream);
+    border-radius: 7px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    transition: box-shadow .15s;
+  }
+  .mem-entry:hover { box-shadow: var(--shadow); }
+  .mem-entry:last-child { margin-bottom: 0; }
+
+  .mem-vendor { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+  .mem-keyword {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: var(--ink); margin: 2px 0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .mem-keyword .arrow { color: var(--accent); font-size: 11px; }
+  .mem-field { font-size: 12px; color: var(--ink); }
+
+  .conf-mini {
+    display: flex; align-items: center; gap: 6px; margin-top: 6px;
+  }
+  .conf-mini-track {
+    flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .conf-mini-fill { height: 100%; border-radius: 2px; }
+  .conf-mini-val { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+
+  /* ─────────────── DETAIL DRAWER ─────────────── */
+  .drawer-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,12,16,.4);
+    z-index: 90;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 480px;
+    background: var(--card);
+    z-index: 100;
+    box-shadow: -8px 0 40px rgba(10,12,16,.2);
+    transform: translateX(100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .drawer.open { transform: translateX(0); }
+
+  .drawer-head {
+    padding: 22px 26px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between;
+    background: var(--cream);
+  }
+  .drawer-title { font-family: var(--display); font-size: 18px; font-weight: 700; }
+  .drawer-sub { font-size: 12px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
+  .drawer-close {
+    width: 30px; height: 30px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--muted);
+    transition: all .12s; flex-shrink: 0;
+  }
+  .drawer-close:hover { background: var(--ink); color: var(--paper); }
+
+  .drawer-body { flex: 1; overflow-y: auto; padding: 24px 26px; }
+
+  .drawer-section { margin-bottom: 24px; }
+  .drawer-section-title {
+    font-size: 10px; font-family: var(--mono);
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-item {
+    background: var(--cream); border-radius: 7px;
+    padding: 10px 12px; border: 1px solid var(--border);
+  }
+  .field-key { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+  .field-val { font-size: 13px; font-family: var(--mono); color: var(--ink); font-weight: 500; margin-top: 2px; }
+  .field-val.null-val { color: var(--muted); font-style: italic; }
+
+  .raw-text-box {
+    background: var(--ink); color: var(--paper);
+    border-radius: 8px; padding: 14px 16px;
+    font-family: var(--mono); font-size: 12px;
+    line-height: 1.7;
+  }
+  .raw-text-box .highlight { color: var(--gold); }
+
+  .correction-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px;
+    background: var(--cream); border-radius: 7px;
+    border: 1px solid var(--border); margin-bottom: 8px;
+  }
+  .correction-item .icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .correction-text { font-size: 12px; line-height: 1.5; }
+  .correction-text strong { font-weight: 500; display: block; margin-bottom: 2px; }
+  .correction-text span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+
+  .audit-trail { display: flex; flex-direction: column; gap: 0; position: relative; }
+  .audit-trail::before {
+    content: '';
+    position: absolute; left: 14px; top: 8px; bottom: 8px;
+    width: 1px; background: var(--border);
+  }
+  .audit-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 8px 0; position: relative;
+  }
+  .audit-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--card); border: 2px solid var(--accent);
+    flex-shrink: 0; margin-top: 4px; z-index: 1;
+    box-shadow: 0 0 0 3px var(--card);
+  }
+  .audit-content { flex: 1; }
+  .audit-step-name { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500; }
+  .audit-detail { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .audit-time { font-size: 10px; font-family: var(--mono); color: var(--muted); opacity: .6; margin-top: 2px; }
+
+  .drawer-actions {
+    padding: 16px 26px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px;
+  }
+
+  /* ─────────────── EMPTY + LOADING ─────────────── */
+  .loading-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 20px; color: var(--muted);
+    gap: 12px;
+  }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { padding: 48px 24px; text-align: center; color: var(--muted); }
+  .empty-state .big { font-size: 36px; margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ─────────────── TOAST ─────────────── */
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 200; display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    background: var(--ink); color: var(--paper);
+    padding: 12px 18px; border-radius: 8px;
+    font-size: 13px; font-family: var(--sans);
+    box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px;
+    min-width: 280px;
+    animation: toastIn .3s ease;
+    border-left: 3px solid var(--accent);
+  }
+  .toast.success { border-left-color: var(--green); }
+  .toast.info    { border-left-color: var(--accent2); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ─────────────── PAGINATION ─────────────── */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px;
+    border-top: 1px solid var(--border);
+    font-size: 12px; font-family: var(--mono); color: var(--muted);
+  }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent;
+    font-size: 12px; font-family: var(--mono); color: var(--muted);
+    transition: all .12s;
+  }
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .page-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* ─────────────── RESPONSIVE ─────────────── */
+  @media (max-width: 1100px) {
+    .panels { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 780px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { position: fixed; left: -240px; z-index: 60; transition: left .25s; height: 100%; }
+    .sidebar.open { left: 0; }
+    .topbar, .main { grid-column: 1; }
+    .drawer { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-eye"></div>
+      <div class="brand-name">Memory Agent</div>
+      <div class="brand-sub">v1.0 · INVOICE INTELLIGENCE</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="switchTab('invoices')">
+        <span class="icon">📄</span> Invoices
+        <span class="nav-badge" id="nav-invoice-count">—</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('memory')">
+        <span class="icon">🧠</span> Memory Store
+      </div>
+
+      <div class="nav-section">Analysis</div>
+      <div class="nav-item" onclick="switchTab('corrections')">
+        <span class="icon">✏️</span> Corrections
+      </div>
+      <div class="nav-item" onclick="switchTab('duplicates')">
+        <span class="icon">⚠️</span> Duplicates
+      </div>
+
+      <div class="nav-section">Admin</div>
+      <div class="nav-item" onclick="switchTab('users')">
+        <span class="icon">👥</span> Users
+        <span class="nav-badge" id="nav-user-count">—</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('activity')">
+        <span class="icon">📊</span> User Activity
+      </div>
+
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="refreshAll()">
+        <span class="icon">🔄</span> Refresh Data
+      </div>
+      <div class="nav-item" onclick="openSettings()">
+        <span class="icon">⚙️</span> API Settings
+      </div>
+      <div class="nav-item" onclick="logout()" style="color:rgba(200,64,26,.7)">
+        <span class="icon">🚪</span> Logout
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>
+      API: <span id="api-status">Connecting…</span>
+    </div>
+  </aside>
+
+  <!-- ─── TOPBAR ─── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title" id="page-title">Invoice Dashboard</div>
+        <div class="page-crumb" id="page-crumb">All processed invoices · real-time</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Search invoices, vendors…" oninput="applyFilters()" />
+      </div>
+      <button class="btn btn-outline" onclick="exportCSV()">⬇ Export</button>
+      <button class="btn btn-primary" onclick="refreshAll()">↺ Sync</button>
+    </div>
+  </header>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main" id="main-content">
+
+    <!-- STATS ROW -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card red">
+        <span class="stat-icon">📄</span>
+        <div class="stat-label">Total Invoices</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">across all vendors</div>
+      </div>
+      <div class="stat-card blue">
+        <span class="stat-icon">🧠</span>
+        <div class="stat-label">Vendor Memory</div>
+        <div class="stat-value" id="stat-vendor-mem">—</div>
+        <div class="stat-sub">learned patterns</div>
+      </div>
+      <div class="stat-card gold">
+        <span class="stat-icon">✏️</span>
+        <div class="stat-label">Correction Rules</div>
+        <div class="stat-value" id="stat-corr-mem">—</div>
+        <div class="stat-sub">applied strategies</div>
+      </div>
+      <div class="stat-card green">
+        <span class="stat-icon">✅</span>
+        <div class="stat-label">Auto-Resolved</div>
+        <div class="stat-value" id="stat-auto">—</div>
+        <div class="stat-sub">high-confidence</div>
+      </div>
+    </div>
+
+    <!-- INVOICE TABLE + MEMORY PANEL -->
+    <div class="panels" id="panels-row">
+
+      <!-- LEFT: Invoice Table -->
+      <div class="panel" id="invoice-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="dot"></span> Processed Invoices</div>
+          <div class="panel-actions">
+            <select id="sort-select" onchange="applyFilters()" style="font-size:12px;font-family:var(--mono);border:1px solid var(--border);background:var(--cream);padding:4px 8px;border-radius:5px;color:var(--ink);cursor:pointer;">
+              <option value="id-desc">Newest first</option>
+              <option value="id-asc">Oldest first</option>
+              <option value="vendor">By Vendor</option>
+              <option value="conf-desc">Confidence ↓</option>
+              <option value="conf-asc">Confidence ↑</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <span style="font-size:11px;font-family:var(--mono);color:var(--muted);">Filter:</span>
+          <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+          <button class="filter-chip blue" onclick="setFilter('Supplier GmbH', this)">Supplier GmbH</button>
+          <button class="filter-chip gold" onclick="setFilter('Parts AG', this)">Parts AG</button>
+          <button class="filter-chip green" onclick="setFilter('Freight & Co', this)">Freight & Co</button>
+          <button class="filter-chip" onclick="setFilter('review', this)">⚠ Needs Review</button>
+          <button class="filter-chip" onclick="setFilter('auto', this)">✓ Auto-resolved</button>
+          <button class="filter-chip" onclick="setFilter('duplicate', this)">⊘ Duplicates</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortByCol('id')">Invoice ID <span class="sort-arrow">↕</span></th>
+                <th onclick="sortByCol('vendor')">Vendor <span class="sort-arrow">↕</span></th>
+                <th>Invoice #</th>
+                <th>Corrections</th>
+                <th onclick="sortByCol('conf')">Confidence <span class="sort-arrow">↕</span></th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="invoice-tbody">
+              <tr>
+                <td colspan="6">
+                  <div class="loading-state">
+                    <div class="spinner"></div>
+                    <span>Loading invoices…</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="pagination">
+          <span id="page-info">— of — entries</span>
+          <div class="page-btns" id="page-btns"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Memory Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> Memory Store</div>
+        </div>
+        <div class="memory-panel" id="memory-container">
+          <div class="loading-state"><div class="spinner"></div><span>Loading memory…</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── DETAIL DRAWER ─── -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="detail-drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title" id="drawer-title">Invoice Detail</div>
+      <div class="drawer-sub" id="drawer-sub">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+    <!-- populated by JS -->
+  </div>
+  <div class="drawer-actions">
+    <button class="btn btn-outline" onclick="closeDrawer()">Close</button>
+    <button class="btn btn-primary" onclick="approveInvoice()">✓ Approve</button>
+  </div>
+</div>
+
+<!-- ─── TOASTS ─── -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ─── SETTINGS MODAL ─── (lightweight) -->
+<div id="settings-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,12,16,.5);display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border-radius:12px;padding:28px 32px;width:400px;box-shadow:var(--shadow-lg);border:1px solid var(--border);">
+    <div style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:16px;">API Settings</div>
+    <label style="font-size:12px;font-family:var(--mono);color:var(--muted);">Base URL</label>
+    <input id="api-url-input" type="text" style="width:100%;margin-top:6px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;background:var(--cream);color:var(--ink);outline:none;" />
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════ */
+let API_BASE = localStorage.getItem('apiBase') || 'http://localhost:5050';
+const token = localStorage.getItem('token');
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+// Admin auth guard
+if (!token || user.role !== 'admin') {
+  window.location.href = 'login.html';
+}
+
+function logout() {
+  fetch(`${API_BASE}/api/auth/logout`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  }).finally(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+let allInvoices = [];      // raw from API + enriched
+let filteredInvoices = []; // after filters/search
+let vendorMemory = [];
+let correctionMemory = [];
+let allUsers = [];
+let allActivity = [];
+let currentFilter = 'all';
+let currentPage = 1;
+const PAGE_SIZE = 12;
+let selectedRow = null;
+let sortCol = null;
+let sortDir = 1;
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  await refreshAll();
+});
+
+async function refreshAll() {
+  showToast('Syncing with API…', 'info');
+  try {
+    await Promise.all([
+      fetchStats(),
+      fetchInvoices(),
+      fetchMemory(),
+      fetchAdminData()
+    ]);
+    document.getElementById('api-status').textContent = 'localhost:5050';
+    showToast('Data synced successfully', 'success');
+  } catch(e) {
+    document.getElementById('api-status').textContent = 'Offline — demo mode';
+    showToast('API unreachable — showing demo data', '');
+    loadDemoData();
+  }
+}
+
+/* ════════════════════════════════════════════
+   API CALLS
+════════════════════════════════════════════ */
+async function fetchStats() {
+  const r = await fetch(`${API_BASE}/api/stats`);
+  const d = await r.json();
+  document.getElementById('stat-total').textContent = d.invoices;
+  document.getElementById('stat-vendor-mem').textContent = d.vendorMemory;
+  document.getElementById('stat-corr-mem').textContent = d.correctionMemory;
+  document.getElementById('stat-auto').textContent = d.autoResolved;
+  document.getElementById('nav-invoice-count').textContent = d.invoices;
+}
+
+async function fetchInvoices() {
+  const r = await fetch(`${API_BASE}/api/invoices`);
+  const raw = await r.json();
+  allInvoices = raw.map(enrichInvoice);
+  applyFilters();
+}
+
+async function fetchMemory() {
+  const [vr, cr] = await Promise.all([
+    fetch(`${API_BASE}/api/vendor-memory`).then(r => r.json()),
+    fetch(`${API_BASE}/api/correction-memory`).then(r => r.json())
+  ]);
+  vendorMemory = vr;
+  correctionMemory = cr;
+  renderMemory();
+}
+
+/* ════════════════════════════════════════════
+   ENRICH INVOICE (add computed fields)
+════════════════════════════════════════════ */
+function enrichInvoice(inv) {
+  const invoiceNum = inv.invoiceNumber || inv.invoice_number || '—';
+  const vendor = inv.vendor || '—';
+
+  // Use the actual confidence and status from the API
+  const confidence = inv.confidence != null ? inv.confidence : 0.5;
+  const status = inv.status || 'review';
+
+  // Parse corrections from the API (stored as JSON string)
+  let corrections = [];
+  if (inv.corrections) {
+    try {
+      const parsed = typeof inv.corrections === 'string' ? JSON.parse(inv.corrections) : inv.corrections;
+      corrections = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      corrections = [];
+    }
+  }
+
+  // Also add matching memory patterns for display
+  const memMatches = vendorMemory.filter(m => m.vendor === vendor);
+  const corrMatches = correctionMemory.filter(m => m.vendor === vendor);
+  if (memMatches.length) corrections.push(...memMatches.map(m => m.keyword));
+  if (corrMatches.length) corrections.push(...corrMatches.map(m => m.pattern));
+
+  // Deduplicate corrections
+  corrections = [...new Set(corrections)];
+
+  return { ...inv, invoiceNum, vendor, corrections, confidence, status };
+}
+
+/* ════════════════════════════════════════════
+   DEMO DATA (when API is offline)
+════════════════════════════════════════════ */
+function loadDemoData() {
+  document.getElementById('stat-total').textContent = '19';
+  document.getElementById('stat-vendor-mem').textContent = '4';
+  document.getElementById('stat-corr-mem').textContent = '3';
+  document.getElementById('nav-invoice-count').textContent = '19';
+
+  vendorMemory = [
+    { id:1, vendor:'Supplier GmbH', keyword:'Leistungsdatum', field:'serviceDate', confidence:0.75 },
+    { id:2, vendor:'Freight & Co',  keyword:'Skonto',         field:'discountTerms', confidence:0.6 },
+    { id:3, vendor:'Parts AG',      keyword:'VAT_INCLUDED',   field:'taxTotal',      confidence:0.6 },
+    { id:4, vendor:'Freight & Co',  keyword:'FREIGHT_DESC',   field:'lineItems[0].sku', confidence:0.6 },
+  ];
+  correctionMemory = [
+    { id:1, vendor:'Parts AG',     pattern:'VAT_INCLUDED',  action:'RECALCULATE_TAX',   confidence:0.6 },
+    { id:2, vendor:'Freight & Co', pattern:'FREIGHT_DESC',  action:'MAP_TO_FREIGHT_SKU', confidence:0.6 },
+    { id:3, vendor:'Freight & Co', pattern:'SKONTO_TERMS',  action:'SET_DISCOUNT_TERMS', confidence:0.6 },
+  ];
+
+  const rawInvoices = [
+    { id:1,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-001', rawText:'Leistungsdatum: 01.01.2024' },
+    { id:2,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-001', rawText:'Service date: 01.01.2024' },
+    { id:3,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-002', rawText:'Leistungsdatum: 15.01.2024' },
+    { id:4,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-002', rawText:'Service period starting 15.01.2024' },
+    { id:5,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-003', rawText:'Leistungsdatum: 20.01.2024' },
+    { id:6,  vendor:'Supplier GmbH', invoiceNumber:'INV-2024-003', rawText:'Leistungsdatum: 20.01.2024 (duplicate copy)' },
+    { id:7,  vendor:'Parts AG',      invoiceNumber:'PA-7781',       rawText:'Prices incl. VAT' },
+    { id:8,  vendor:'Parts AG',      invoiceNumber:'PA-7781',       rawText:'MwSt. inkl. 19%' },
+    { id:9,  vendor:'Parts AG',      invoiceNumber:'PA-7799',       rawText:'Invoice date: 20-02-2024' },
+    { id:10, vendor:'Parts AG',      invoiceNumber:'PA-7810',       rawText:'Currency: EUR' },
+    { id:11, vendor:'Parts AG',      invoiceNumber:'PA-7810',       rawText:'Total amount: 1190 EUR' },
+    { id:12, vendor:'Freight & Co',  invoiceNumber:'FC-1001',       rawText:'2% Skonto if paid within 10 days' },
+    { id:13, vendor:'Freight & Co',  invoiceNumber:'FC-1001',       rawText:'Service: Transport charges' },
+    { id:14, vendor:'Freight & Co',  invoiceNumber:'FC-1002',       rawText:'Service: Seefracht / Shipping' },
+    { id:15, vendor:'Freight & Co',  invoiceNumber:'FC-1003',       rawText:'Fuel surcharge applied' },
+    { id:16, vendor:'Freight & Co',  invoiceNumber:'FC-1004',       rawText:'Delivery confirmation pending' },
+    { id:17, vendor:'Supplier GmbH', invoiceNumber:'INV-2024-010',  rawText:'Leistungsdatum: 05.04.2024' },
+    { id:18, vendor:'Parts AG',      invoiceNumber:'PA-7850',       rawText:'Prices exclude transport charges' },
+    { id:19, vendor:'Freight & Co',  invoiceNumber:'FC-1010',       rawText:'Service period: April 2024' },
+  ];
+
+  allInvoices = rawInvoices.map(enrichInvoiceDemo);
+  applyFilters();
+  renderMemory();
+
+  // auto count stat
+  const autoCount = allInvoices.filter(i => i.status === 'auto').length;
+  document.getElementById('stat-auto').textContent = autoCount;
+}
+
+function enrichInvoiceDemo(inv) {
+  const vendor = inv.vendor;
+  const invoiceNum = inv.invoiceNumber;
+
+  const memMatches = vendorMemory.filter(m => m.vendor === vendor);
+  const corrMatches = correctionMemory.filter(m => m.vendor === vendor);
+
+  const corrections = [
+    ...memMatches.map(m => m.keyword),
+    ...corrMatches.map(m => m.pattern)
+  ];
+
+  let confidence = memMatches.reduce((a, m) => Math.max(a, m.confidence), 0.5);
+
+  // detect duplicate by invoiceNumber within the demo set
+  const rawInvoiceNums = [
+    'INV-2024-001','INV-2024-001','INV-2024-002','INV-2024-002',
+    'INV-2024-003','INV-2024-003','PA-7781','PA-7781','PA-7799',
+    'PA-7810','PA-7810','FC-1001','FC-1001','FC-1002','FC-1003',
+    'FC-1004','INV-2024-010','PA-7850','FC-1010'
+  ];
+  const isDuplicate = rawInvoiceNums.filter(n => n === invoiceNum).length > 1;
+  const requiresReview = confidence < 0.75;
+  const status = isDuplicate ? 'duplicate' : requiresReview ? 'review' : 'auto';
+
+  // boost confidence for Supplier GmbH Leistungsdatum
+  if (vendor === 'Supplier GmbH' && inv.rawText.includes('Leistungsdatum')) {
+    confidence = 0.75;
+  }
+
+  return { ...inv, invoiceNum, corrections, confidence, status, isDuplicate };
+}
+
+/* ════════════════════════════════════════════
+   RENDER INVOICE TABLE
+════════════════════════════════════════════ */
+function applyFilters() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+
+  let list = allInvoices.filter(inv => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'review') return inv.status === 'review';
+    if (currentFilter === 'auto') return inv.status === 'auto';
+    if (currentFilter === 'duplicate') return inv.status === 'duplicate';
+    return inv.vendor === currentFilter;
+  });
+
+  if (search) {
+    list = list.filter(inv =>
+      (inv.invoiceNum || '').toLowerCase().includes(search) ||
+      (inv.vendor || '').toLowerCase().includes(search) ||
+      (inv.rawText || '').toLowerCase().includes(search) ||
+      (inv.corrections || []).join(' ').toLowerCase().includes(search)
+    );
+  }
+
+  // sort
+  list = [...list].sort((a, b) => {
+    if (sort === 'vendor') return a.vendor.localeCompare(b.vendor);
+    if (sort === 'conf-desc') return b.confidence - a.confidence;
+    if (sort === 'conf-asc') return a.confidence - b.confidence;
+    if (sort === 'id-asc') return (a.id||0) - (b.id||0);
+    return (b.id||0) - (a.id||0); // newest first default
+  });
+
+  filteredInvoices = list;
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('invoice-tbody');
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredInvoices.slice(start, start + PAGE_SIZE);
+
+  if (page.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="6">
+        <div class="empty-state">
+          <div class="big">🔍</div>
+          <p>No invoices match your filters.</p>
+        </div>
+      </td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = page.map(inv => {
+    const vendorClass = inv.vendor === 'Supplier GmbH' ? 'supplier'
+                      : inv.vendor === 'Parts AG' ? 'parts' : 'freight';
+    const confPct = Math.round(inv.confidence * 100);
+    const confColor = inv.confidence >= 0.75 ? 'var(--green)'
+                    : inv.confidence >= 0.6 ? 'var(--gold)' : 'var(--accent)';
+    const statusBadge = inv.status === 'duplicate'
+      ? `<span class="badge badge-duplicate">⊘ Duplicate</span>`
+      : inv.status === 'auto'
+      ? `<span class="badge badge-auto">✓ Auto</span>`
+      : `<span class="badge badge-review">⚠ Review</span>`;
+
+    const corrTags = (inv.corrections || []).slice(0, 3).map(c =>
+      `<span class="corr-tag active">${c}</span>`
+    ).join('') + ((inv.corrections||[]).length > 3
+      ? `<span class="corr-tag">+${inv.corrections.length - 3}</span>` : '');
+
+    return `<tr onclick="openDrawer(${inv.id})" data-id="${inv.id}">
+      <td><span class="invoice-id">${inv.invoiceNum || '—'}</span></td>
+      <td><span class="vendor-chip ${vendorClass}">${inv.vendor}</span></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);">${inv.invoiceNum || '—'}</td>
+      <td><div class="corrections-list">${corrTags || '<span style="color:var(--muted);font-size:11px;font-family:var(--mono);">none</span>'}</div></td>
+      <td>
+        <div class="confidence-bar">
+          <div class="conf-track">
+            <div class="conf-fill" style="width:${confPct}%;background:${confColor}"></div>
+          </div>
+          <span class="conf-label">${confPct}%</span>
+        </div>
+      </td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filteredInvoices.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+
+  document.getElementById('page-info').textContent =
+    total === 0 ? '0 entries' : `${start}–${end} of ${total} entries`;
+
+  const btns = document.getElementById('page-btns');
+  let html = `<button class="page-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (pages > 7 && Math.abs(i - currentPage) > 2 && i !== 1 && i !== pages) {
+      if (i === 2 || i === pages - 1) html += `<button class="page-btn" disabled>…</button>`;
+      continue;
+    }
+    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===pages||pages===0?'disabled':''}>›</button>`;
+  btns.innerHTML = html;
+}
+
+function changePage(p) {
+  const pages = Math.ceil(filteredInvoices.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable();
+}
+
+/* ════════════════════════════════════════════
+   FILTERS
+════════════════════════════════════════════ */
+function setFilter(val, el) {
+  currentFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+/* ════════════════════════════════════════════
+   MEMORY PANEL
+════════════════════════════════════════════ */
+function renderMemory() {
+  const container = document.getElementById('memory-container');
+
+  const vendors = [...new Set([
+    ...vendorMemory.map(m => m.vendor),
+    ...correctionMemory.map(m => m.vendor)
+  ])];
+
+  if (!vendors.length) {
+    container.innerHTML = `<div class="empty-state"><div class="big">🧠</div><p>No memory entries found.</p></div>`;
+    return;
+  }
+
+  const vendorEntries = vendorMemory.map(m => {
+    const pct = Math.round((m.confidence || 0) * 100);
+    const color = m.confidence >= 0.75 ? 'var(--green)' : m.confidence >= 0.6 ? 'var(--gold)' : 'var(--accent)';
+    return `<div class="mem-entry">
+      <div class="mem-vendor">${m.vendor}</div>
+      <div class="mem-keyword">
+        <span>"${m.keyword}"</span>
+        <span class="arrow">→</span>
+        <span>${m.field}</span>
+      </div>
+      <div class="conf-mini">
+        <div class="conf-mini-track"><div class="conf-mini-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="conf-mini-val">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const corrEntries = correctionMemory.map(m => {
+    const pct = Math.round((m.confidence || 0) * 100);
+    const color = m.confidence >= 0.75 ? 'var(--green)' : m.confidence >= 0.6 ? 'var(--gold)' : 'var(--accent)';
+    return `<div class="mem-entry">
+      <div class="mem-vendor">${m.vendor}</div>
+      <div class="mem-keyword">
+        <span>${m.pattern}</span>
+        <span class="arrow">→</span>
+        <span>${m.action}</span>
+      </div>
+      <div class="conf-mini">
+        <div class="conf-mini-track"><div class="conf-mini-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="conf-mini-val">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="mem-section">
+      <div class="mem-section-title">Vendor Patterns <span class="count">${vendorMemory.length}</span></div>
+      ${vendorEntries || '<div style="color:var(--muted);font-size:12px;">None yet</div>'}
+    </div>
+    <div class="mem-section">
+      <div class="mem-section-title">Correction Rules <span class="count">${correctionMemory.length}</span></div>
+      ${corrEntries || '<div style="color:var(--muted);font-size:12px;">None yet</div>'}
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════════════
+   DETAIL DRAWER
+════════════════════════════════════════════ */
+function openDrawer(id) {
+  const inv = allInvoices.find(i => i.id === id);
+  if (!inv) return;
+
+  document.getElementById('drawer-title').textContent = inv.invoiceNum || '—';
+  document.getElementById('drawer-sub').textContent = `${inv.vendor} · ${inv.status.toUpperCase()}`;
+
+  const confPct = Math.round(inv.confidence * 100);
+  const confColor = inv.confidence >= 0.75 ? 'var(--green)'
+                  : inv.confidence >= 0.6 ? 'var(--gold)' : 'var(--accent)';
+
+  // Build corrections list
+  const corrList = (inv.corrections || []).map(c =>
+    `<div class="correction-item">
+      <span class="icon">✏️</span>
+      <div class="correction-text">
+        <strong>${c}</strong>
+        <span>Applied pattern from memory store</span>
+      </div>
+    </div>`
+  ).join('') || `<div style="color:var(--muted);font-size:13px;font-family:var(--mono);">No corrections applied</div>`;
+
+  // highlight keywords in raw text
+  let highlighted = (inv.rawText || '—');
+  ['Leistungsdatum', 'Skonto', 'VAT', 'MwSt', 'Seefracht', 'Shipping'].forEach(kw => {
+    highlighted = highlighted.replace(new RegExp(`(${kw})`, 'gi'),
+      `<span class="highlight">$1</span>`);
+  });
+
+  const statusBadge = inv.status === 'duplicate'
+    ? `<span class="badge badge-duplicate">⊘ Duplicate</span>`
+    : inv.status === 'auto'
+    ? `<span class="badge badge-auto">✓ Auto-resolved</span>`
+    : `<span class="badge badge-review">⚠ Needs Human Review</span>`;
+
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Invoice Fields</div>
+      <div class="field-grid">
+        <div class="field-item">
+          <div class="field-key">Invoice ID</div>
+          <div class="field-val">${inv.invoiceNum || '—'}</div>
+        </div>
+        <div class="field-item">
+          <div class="field-key">Vendor</div>
+          <div class="field-val">${inv.vendor}</div>
+        </div>
+        <div class="field-item">
+          <div class="field-key">Status</div>
+          <div class="field-val">${statusBadge}</div>
+        </div>
+        <div class="field-item">
+          <div class="field-key">Confidence</div>
+          <div class="field-val" style="color:${confColor}">${confPct}%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Raw Text</div>
+      <div class="raw-text-box">${highlighted}</div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Applied Corrections</div>
+      ${corrList}
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Audit Trail</div>
+      <div class="audit-trail">
+        <div class="audit-step">
+          <div class="audit-dot"></div>
+          <div class="audit-content">
+            <div class="audit-step-name">recall</div>
+            <div class="audit-detail">Vendor memory queried for ${inv.vendor}</div>
+            <div class="audit-time">${new Date().toISOString()}</div>
+          </div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-dot" style="border-color:var(--accent2)"></div>
+          <div class="audit-content">
+            <div class="audit-step-name" style="color:var(--accent2)">apply</div>
+            <div class="audit-detail">${inv.corrections?.length || 0} correction pattern(s) matched</div>
+            <div class="audit-time">${new Date().toISOString()}</div>
+          </div>
+        </div>
+        <div class="audit-step">
+          <div class="audit-dot" style="border-color:${confColor}"></div>
+          <div class="audit-content">
+            <div class="audit-step-name" style="color:${confColor}">decide</div>
+            <div class="audit-detail">${inv.status === 'auto' ? 'Auto-resolved (confidence ≥ 0.75)' : inv.status === 'duplicate' ? 'Flagged as duplicate — skipped memory update' : 'Requires human review (confidence < 0.75)'}</div>
+            <div class="audit-time">${new Date().toISOString()}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detail-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('detail-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function approveInvoice() {
+  showToast('Invoice approved — memory updated ✓', 'success');
+  closeDrawer();
+}
+
+/* ════════════════════════════════════════════
+   SETTINGS
+════════════════════════════════════════════ */
+function openSettings() {
+  document.getElementById('api-url-input').value = API_BASE;
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+function saveSettings() {
+  API_BASE = document.getElementById('api-url-input').value.trim();
+  localStorage.setItem('apiBase', API_BASE);
+  closeSettings();
+  refreshAll();
+}
+
+/* ════════════════════════════════════════════
+   EXPORT
+════════════════════════════════════════════ */
+function exportCSV() {
+  const header = ['ID', 'Vendor', 'Invoice #', 'Corrections', 'Confidence', 'Status'];
+  const rows = filteredInvoices.map(i => [
+    i.id, i.vendor, i.invoiceNum,
+    (i.corrections||[]).join(' | '),
+    Math.round(i.confidence*100)+'%',
+    i.status
+  ]);
+  const csv = [header, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `invoices-${Date.now()}.csv`;
+  a.click();
+  showToast('CSV exported ✓', 'success');
+}
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+function showToast(msg, type) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'success' ? '✅' : type === 'info' ? 'ℹ️' : '⚠️'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+/* ════════════════════════════════════════════
+   TAB SWITCHING
+════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+  const main = document.getElementById('main-content');
+  const statsRow = document.getElementById('stats-row');
+  const panelsRow = document.getElementById('panels-row');
+
+  if (tab === 'invoices') {
+    document.getElementById('page-title').textContent = 'Invoice Dashboard';
+    document.getElementById('page-crumb').textContent = 'All processed invoices · real-time';
+    statsRow.style.display = '';
+    panelsRow.style.display = '';
+    // Remove admin panels if present
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel) adminPanel.remove();
+  } else if (tab === 'memory') {
+    document.getElementById('page-title').textContent = 'Memory Store';
+    showToast('Memory tab — scroll down in the right panel', 'info');
+  } else if (tab === 'users') {
+    document.getElementById('page-title').textContent = 'Registered Users';
+    document.getElementById('page-crumb').textContent = 'All users on the platform';
+    statsRow.style.display = 'none';
+    panelsRow.style.display = 'none';
+    renderUsersPanel();
+  } else if (tab === 'activity') {
+    document.getElementById('page-title').textContent = 'User Activity';
+    document.getElementById('page-crumb').textContent = 'All invoice uploads by users';
+    statsRow.style.display = 'none';
+    panelsRow.style.display = 'none';
+    renderActivityPanel();
+  } else {
+    document.getElementById('page-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+    showToast(`${tab} view coming soon`, '');
+  }
+}
+
+/* ════════════════════════════════════════════
+   ADMIN: FETCH USERS & ACTIVITY
+════════════════════════════════════════════ */
+async function fetchAdminData() {
+  try {
+    const [ur, ar] = await Promise.all([
+      fetch(`${API_BASE}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_BASE}/api/admin/activity`, { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+    allUsers = await ur.json();
+    allActivity = await ar.json();
+    const countEl = document.getElementById('nav-user-count');
+    if (countEl) countEl.textContent = Array.isArray(allUsers) ? allUsers.length : '0';
+  } catch (e) {
+    console.error('Admin fetch error:', e);
+  }
+}
+
+function renderUsersPanel() {
+  // Remove existing admin panel
+  let panel = document.getElementById('admin-panel');
+  if (panel) panel.remove();
+
+  panel = document.createElement('div');
+  panel.id = 'admin-panel';
+  panel.style.cssText = 'animation: fadeUp .3s ease';
+
+  const users = Array.isArray(allUsers) ? allUsers : [];
+
+  panel.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:var(--display);font-size:16px;font-weight:700">👥 Registered Users (${users.length})</div>
+        <button class="btn btn-primary" onclick="fetchAdminData().then(()=>renderUsersPanel())" style="font-size:12px;padding:5px 12px">↺ Refresh</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead style="background:var(--cream)">
+          <tr>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">ID</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Username</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Email</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Phone</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Role</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.length === 0 ? '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--muted)">No users registered yet</td></tr>' :
+            users.map(u => `<tr style="border-bottom:1px solid var(--cream)">
+              <td style="padding:10px 16px;font-family:var(--mono);font-size:12px">${u.id}</td>
+              <td style="padding:10px 16px;font-weight:500">${u.username || '—'}</td>
+              <td style="padding:10px 16px">${u.email || '—'}</td>
+              <td style="padding:10px 16px">${u.phone || '—'}</td>
+              <td style="padding:10px 16px"><span style="padding:2px 8px;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:600;${u.role==='admin'?'background:rgba(200,64,26,.1);color:var(--accent)':'background:rgba(37,99,168,.1);color:var(--accent2)'}">${u.role}</span></td>
+              <td style="padding:10px 16px;font-size:12px;color:var(--muted)">${u.createdAt ? new Date(u.createdAt+'Z').toLocaleDateString() : '—'}</td>
+            </tr>`).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('main-content').appendChild(panel);
+}
+
+function renderActivityPanel() {
+  let panel = document.getElementById('admin-panel');
+  if (panel) panel.remove();
+
+  panel = document.createElement('div');
+  panel.id = 'admin-panel';
+  panel.style.cssText = 'animation: fadeUp .3s ease';
+
+  const acts = Array.isArray(allActivity) ? allActivity : [];
+
+  panel.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)">
+      <div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:var(--display);font-size:16px;font-weight:700">📊 User Activity (${acts.length} uploads)</div>
+        <button class="btn btn-primary" onclick="fetchAdminData().then(()=>renderActivityPanel())" style="font-size:12px;padding:5px 12px">↺ Refresh</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead style="background:var(--cream)">
+          <tr>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">User</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Filename</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Vendor</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Invoice #</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Confidence</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Status</th>
+            <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Uploaded</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${acts.length === 0 ? '<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--muted)">No user uploads yet</td></tr>' :
+            acts.map(a => {
+              const pct = Math.round((a.confidence||0)*100);
+              const statusColor = a.status==='auto'?'var(--green)':a.status==='duplicate'?'var(--accent)':'var(--gold)';
+              return `<tr style="border-bottom:1px solid var(--cream)">
+                <td style="padding:10px 16px;font-weight:500">${a.username || a.email || '—'}</td>
+                <td style="padding:10px 16px">${a.filename || '—'}</td>
+                <td style="padding:10px 16px">${a.vendor || '—'}</td>
+                <td style="padding:10px 16px;font-family:var(--mono);font-size:12px">${a.invoiceNumber || '—'}</td>
+                <td style="padding:10px 16px">${pct}%</td>
+                <td style="padding:10px 16px"><span style="padding:2px 8px;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:600;color:${statusColor}">${a.status || '—'}</span></td>
+                <td style="padding:10px 16px;font-size:12px;color:var(--muted)">${a.uploadedAt ? new Date(a.uploadedAt+'Z').toLocaleDateString() : '—'}</td>
+              </tr>`;
+            }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('main-content').appendChild(panel);
+}
+
+function sortByCol(col) { applyFilters(); }
+</script>
+</body>
+</html>

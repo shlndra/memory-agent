@@ -1,49 +1,61 @@
 [
-    {
-      "invoiceId": "INV-A-001",
-      "vendor": "Supplier GmbH",
-      "corrections": [
-        {
-          "field": "serviceDate",
-          "from": null,
-          "to": "2024-01-01",
-          "reason": "Leistungsdatum found in raw text"
-        }
-      ],
-      "finalDecision": "approved"
-    },
-    {
-      "invoiceId": "INV-B-001",
-      "vendor": "Parts AG",
-      "corrections": [
-        {
-          "field": "taxTotal",
-          "from": 400,
-          "to": 380,
-          "reason": "VAT included in total; recalculated"
-        }
-      ],
-      "finalDecision": "approved"
-    },
-    {
-        "invoiceId": "INV-C-001",
-        "vendor": "Freight & Co",
-        "corrections": [
-          {
-            "field": "discountTerms",
-            "from": null,
-            "to": "2% Skonto within 10 days",
-            "reason": "Skonto terms in raw text"
-          },
-          {
-            "field": "lineItems[0].sku",
-            "from": null,
-            "to": "FREIGHT",
-            "reason": "Vendor uses Seefracht/Shipping for FREIGHT"
-          }
-        ],
-        "finalDecision": "approved"
+  {
+    "invoiceId": "INV-A-001",
+    "vendor": "Supplier GmbH",
+    "corrections": [
+      {
+        "type": "FIELD_EXTRACTION",
+        "field": "serviceDate",
+        "from": null,
+        "to": "2024-01-01",
+        "keyword": "Leistungsdatum",
+        "confidence": 0.8,
+        "reason": "Service date identified from German keyword"
       }
-      
-  ]
-  
+    ],
+    "finalDecision": "approved"
+  },
+
+  {
+    "invoiceId": "INV-B-001",
+    "vendor": "Parts AG",
+    "corrections": [
+      {
+        "type": "BUSINESS_RULE",
+        "pattern": "VAT_INCLUDED",
+        "field": "taxTotal",
+        "from": 400,
+        "to": 380,
+        "confidence": 0.75,
+        "reason": "VAT already included in total"
+      }
+    ],
+    "finalDecision": "approved"
+  },
+
+  {
+    "invoiceId": "INV-C-001",
+    "vendor": "Freight & Co",
+    "corrections": [
+      {
+        "type": "FIELD_EXTRACTION",
+        "field": "discountTerms",
+        "from": null,
+        "to": "2% Skonto within 10 days",
+        "keyword": "Skonto",
+        "confidence": 0.7,
+        "reason": "Discount terms found in raw text"
+      },
+      {
+        "type": "BUSINESS_RULE",
+        "pattern": "FREIGHT_DESC",
+        "field": "lineItems[0].sku",
+        "from": null,
+        "to": "FREIGHT",
+        "confidence": 0.7,
+        "reason": "Shipping terms mapped to FREIGHT SKU"
+      }
+    ],
+    "finalDecision": "approved"
+  }
+]

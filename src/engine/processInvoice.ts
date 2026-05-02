@@ -1,11 +1,11 @@
-import {
+const {
   getVendorMemory,
   getCorrectionMemory,
   isDuplicate,
   markInvoiceSeen
-} from "../memory/memoryStore";
+} = require("../memory/memoryStore");
 
-export async function processInvoice(invoice: any) {
+async function processInvoice(invoice: any) {
 
   let reasoning: string[] = [];
   let proposedCorrections: string[] = [];
@@ -14,7 +14,9 @@ export async function processInvoice(invoice: any) {
   // Track applied patterns (avoid duplicates)
   const appliedPatterns = new Set<string>();
 
-  // STEP 1: Duplicate check
+  /* =====================================================
+     STEP 1: DUPLICATE CHECK
+  ===================================================== */
   const duplicate = await isDuplicate(
     invoice.vendor,
     invoice.fields.invoiceNumber
@@ -24,8 +26,9 @@ export async function processInvoice(invoice: any) {
     return {
       normalizedInvoice: invoice.fields,
       proposedCorrections: [],
+      isDuplicate: true,
       requiresHumanReview: true,
-      reasoning: "Duplicate invoice detected (same vendor and invoice number)",
+      reasoning: "Duplicate invoice detected (same vendor + invoice number)",
       confidenceScore: 0.0,
       memoryUpdates: [],
       auditTrail: [
@@ -38,44 +41,55 @@ export async function processInvoice(invoice: any) {
     };
   }
 
-  // Mark invoice as seen
+  // mark as seen
   markInvoiceSeen(invoice.vendor, invoice.fields.invoiceNumber);
 
-  // STEP 2: Vendor memory
-  const memories = await getVendorMemory(invoice.vendor);
+  /* =====================================================
+     STEP 2: VENDOR MEMORY (FIELD EXTRACTION)
+  ===================================================== */
+  const vendorMemories = await getVendorMemory(invoice.vendor);
 
-  for (const mem of memories) {
+  for (const mem of vendorMemories) {
 
     if (
-      invoice.rawText.includes(mem.keyword) &&
+      invoice.rawText.toLowerCase().includes(mem.keyword.toLowerCase()) &&
       invoice.fields[mem.field] === null &&
       !appliedPatterns.has(mem.keyword)
     ) {
 
       proposedCorrections.push(
-        `Auto-suggest ${mem.field} using vendor memory (${mem.keyword})`
+        `Extract ${mem.field} using keyword "${mem.keyword}"`
       );
 
       reasoning.push(
-        `Used past correction: ${mem.keyword} → ${mem.field}`
+        `Matched vendor pattern "${mem.keyword}" → ${mem.field}`
       );
-
-      confidenceScore = Math.max(confidenceScore, mem.confidence);
 
       appliedPatterns.add(mem.keyword);
 
-      // Auto-fill if confident
-      if (mem.confidence >= 0.8) {
-        invoice.fields[mem.field] = "AUTO_FILLED";
-      }
+      // simulate extraction (replace later with real parsing)
+      const dateMatch = invoice.rawText.match(/\d{2}\.\d{2}\.\d{4}/);
+
+if (dateMatch) {
+  const [day, month, year] = dateMatch[0].split(".");
+  invoice.fields[mem.field] = `${year}-${month}-${day}`;
+}
+
+confidenceScore += 0.25;
+if (appliedPatterns.size > 0) {
+  confidenceScore += 0.1;
+}
     }
   }
 
-  // STEP 3: VAT correction memory
+  /* =====================================================
+     STEP 3: CORRECTION MEMORY (BUSINESS LOGIC)
+  ===================================================== */
   const correctionMemories = await getCorrectionMemory(invoice.vendor);
 
   for (const mem of correctionMemories) {
 
+    // VAT INCLUDED
     if (
       mem.pattern === "VAT_INCLUDED" &&
       (
@@ -85,71 +99,70 @@ export async function processInvoice(invoice: any) {
       !appliedPatterns.has("VAT")
     ) {
 
-      proposedCorrections.push(
-        "VAT already included — suggest tax recalculation"
-      );
+      proposedCorrections.push("VAT included — recalculate tax");
 
-      reasoning.push(
-        "Applied learned VAT-included correction"
-      );
-
-      confidenceScore = Math.max(confidenceScore, mem.confidence);
+      reasoning.push("Applied VAT_INCLUDED correction rule");
 
       appliedPatterns.add("VAT");
+
+      confidenceScore += 0.15;
+    }
+
+    // FREIGHT DESCRIPTION
+    if (
+      mem.pattern === "FREIGHT_DESC" &&
+      (
+        invoice.rawText.toLowerCase().includes("seefracht") ||
+        invoice.rawText.toLowerCase().includes("shipping")
+      ) &&
+      !appliedPatterns.has("FREIGHT")
+    ) {
+
+      proposedCorrections.push("Map service to SKU: FREIGHT");
+
+      reasoning.push("Applied FREIGHT mapping rule");
+
+      appliedPatterns.add("FREIGHT");
+
+      confidenceScore += 0.15;
     }
   }
 
-  // STEP 4: Freight & Co logic
+  /* =====================================================
+     STEP 4: FREIGHT SPECIAL LOGIC
+  ===================================================== */
   if (invoice.vendor === "Freight & Co") {
 
-    // Skonto
     if (
       invoice.rawText.toLowerCase().includes("skonto") &&
       !appliedPatterns.has("SKONTO")
     ) {
 
-      proposedCorrections.push(
-        "Detected Skonto terms — record as discountTerms"
-      );
+      proposedCorrections.push("Detected Skonto → add discountTerms");
 
-      reasoning.push(
-        "Detected discount terms from historical patterns"
-      );
-
-      confidenceScore = Math.max(confidenceScore, 0.6);
+      reasoning.push("Detected discount terms (Skonto)");
 
       appliedPatterns.add("SKONTO");
-    }
 
-    // SKU mapping
-    if (
-      (
-        invoice.rawText.toLowerCase().includes("seefracht") ||
-        invoice.rawText.toLowerCase().includes("shipping")
-      ) &&
-      !appliedPatterns.has("SKU")
-    ) {
-
-      proposedCorrections.push(
-        "Map description to SKU: FREIGHT"
-      );
-
-      reasoning.push(
-        "Mapped service description to FREIGHT SKU"
-      );
-
-      confidenceScore = Math.max(confidenceScore, 0.6);
-
-      appliedPatterns.add("SKU");
+      confidenceScore += 0.1;
     }
   }
+
+  /* =====================================================
+     STEP 5: FINAL DECISION
+  ===================================================== */
+
+  // normalize confidence
+  confidenceScore = Math.min(1.0, confidenceScore);
+
+  const requiresHumanReview = confidenceScore < 0.75;
 
   return {
     normalizedInvoice: invoice.fields,
 
     proposedCorrections,
 
-    requiresHumanReview: confidenceScore < 0.75,
+    requiresHumanReview,
 
     reasoning: reasoning.join(". "),
 
@@ -162,7 +175,16 @@ export async function processInvoice(invoice: any) {
         step: "recall+apply",
         timestamp: new Date().toISOString(),
         details: "Memory recalled and applied"
+      },
+      {
+        step: "decide",
+        timestamp: new Date().toISOString(),
+        details: requiresHumanReview
+          ? "Low confidence → human review required"
+          : "High confidence → auto-approved"
       }
     ]
   };
 }
+
+module.exports = { processInvoice };
