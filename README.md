@@ -15,7 +15,8 @@ This project focuses on **post-extraction intelligence**, not OCR or document pa
 - Apply learned memory to future invoices  
 - Increase automation safely using confidence thresholds  
 - Provide explainable decisions and audit trails  
-- Prevent bad learning from duplicates or low-confidence cases  
+- Prevent bad learning from duplicates or low-confidence cases
+- Added pdf feature where user can upload pdf and then wait for review 
 
 ---
 
