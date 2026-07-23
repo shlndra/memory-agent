@@ -2,6 +2,7 @@
   "name": "memory-agent",
   "version": "1.0.0",
   "description": "Memory-driven invoice processing agent",
+  "homepage": "https://prismatic-heliotrope-707840.netlify.app",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
