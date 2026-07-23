@@ -3,3 +3,4 @@ memory.db
 uploads/
 eng.traineddata
 dist/
+public/

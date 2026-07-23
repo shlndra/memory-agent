@@ -1,0 +1,8 @@
+[build]
+  publish = "public"
+  command = "mkdir -p public && cp login.html dashboard.html user-dashboard.html index.html public/"
+
+[[redirects]]
+  from = "/"
+  to = "/login.html"
+  status = 302

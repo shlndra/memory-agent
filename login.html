@@ -651,9 +651,14 @@
       </div>
     </div>
 
-    <div class="brand-bottom">
-      <span class="status-dot"></span>
-      <span class="brand-status">System online · v1.0</span>
+    <div class="brand-bottom" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="status-dot"></span>
+        <span class="brand-status">System online · v1.0</span>
+      </div>
+      <button onclick="openSettings()" style="background:transparent; border:none; color:rgba(245,243,238,.35); cursor:pointer; font-family:var(--mono); font-size:11px; display:flex; align-items:center; gap:4px; outline:none; transition:color .2s; margin-left:auto; position:relative; z-index:10;" onmouseover="this.style.color='var(--paper)'" onmouseout="this.style.color='rgba(245,243,238,.35)'">
+        ⚙️ API SETTINGS
+      </button>
     </div>
   </div>
 
@@ -753,8 +758,35 @@
 
 </div>
 
+<!-- ─── SETTINGS MODAL ─── -->
+<div id="settings-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,12,16,.75);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border-radius:12px;padding:28px 32px;width:400px;box-shadow:var(--shadow-lg);border:1px solid var(--border);">
+    <div style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:16px;color:var(--ink);">API Settings</div>
+    <label style="font-size:12px;font-family:var(--mono);color:var(--muted);display:block;margin-bottom:6px;">Base URL</label>
+    <input id="api-url-input" type="text" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;background:var(--cream);color:var(--ink);outline:none;" />
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeSettings()" style="padding:8px 16px;border:1px solid var(--border);background:var(--cream);color:var(--ink);border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;outline:none;transition:background .2s;" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--cream)'">Cancel</button>
+      <button onclick="saveSettings()" style="padding:8px 16px;border:none;background:var(--accent);color:var(--paper);border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;outline:none;transition:opacity .2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const API = 'http://127.0.0.1:5050';
+let API = localStorage.getItem('apiBase') || 'http://localhost:5050';
+
+function openSettings() {
+  document.getElementById('api-url-input').value = API;
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+function saveSettings() {
+  API = document.getElementById('api-url-input').value.trim();
+  localStorage.setItem('apiBase', API);
+  closeSettings();
+  location.reload();
+}
 
 // If already logged in, redirect
 const existingToken = localStorage.getItem('token');
