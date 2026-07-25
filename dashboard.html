@@ -1428,7 +1428,18 @@ function closeSettings() {
   document.getElementById('settings-modal').style.display = 'none';
 }
 function saveSettings() {
-  API_BASE = document.getElementById('api-url-input').value.trim();
+  let val = document.getElementById('api-url-input').value.trim();
+  if (val && !/^https?:\/\//i.test(val)) {
+    if (val.startsWith('localhost') || val.startsWith('127.0.0.1')) {
+      val = 'http://' + val;
+    } else {
+      val = 'https://' + val;
+    }
+  }
+  if (val.endsWith('/')) {
+    val = val.slice(0, -1);
+  }
+  API_BASE = val;
   localStorage.setItem('apiBase', API_BASE);
   closeSettings();
   refreshAll();
