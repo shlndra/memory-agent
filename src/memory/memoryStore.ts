@@ -2,7 +2,10 @@ import sqlite3 from "sqlite3";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
-export const db = new sqlite3.Database("memory.db");
+import path from "path";
+
+const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), "memory.db");
+export const db = new sqlite3.Database(dbPath);
 
 /* =====================================================
    INIT DATABASE
