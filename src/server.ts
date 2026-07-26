@@ -18,7 +18,12 @@ import {
   saveUserInvoice,
   getUserInvoices,
   getAllUsers,
-  getAllUserActivity
+  getAllUserActivity,
+  getUserInvoiceById,
+  updateUserInvoice,
+  saveVendorMemory,
+  saveCorrectionMemory,
+  increaseConfidence
 } from "./memory/memoryStore";
 
 /* =====================================================
@@ -377,6 +382,54 @@ export function startServer() {
         });
       });
     });
+  });
+
+  /* =====================================================
+     ADMIN: EDIT & APPROVE USER INVOICE
+  ===================================================== */
+  app.put("/api/admin/invoices/:id", authMiddleware, adminMiddleware, async (req: AuthRequest, res: Response) => {
+    const id = Number(req.params.id);
+    const { vendor, invoiceNumber, status, reasoning, corrections } = req.body;
+
+    try {
+      const currentInvoice = await getUserInvoiceById(id);
+      if (!currentInvoice) {
+        res.status(404).json({ error: "Invoice not found" });
+        return;
+      }
+
+      // Convert corrections to string if it is an array
+      const correctionsStr = Array.isArray(corrections) ? JSON.stringify(corrections) : corrections;
+
+      await updateUserInvoice(id, { 
+        vendor, 
+        invoiceNumber, 
+        status, 
+        reasoning, 
+        corrections: correctionsStr 
+      });
+
+      // Trigger Memory Learning Layer if approved
+      if (status === "approved" || status === "auto") {
+        const finalVendor = vendor || currentInvoice.vendor;
+        if (Array.isArray(corrections)) {
+          for (const c of corrections) {
+            if (c.type === "FIELD_EXTRACTION" && c.keyword && c.field) {
+              saveVendorMemory(finalVendor, c.keyword, c.field);
+              increaseConfidence(finalVendor, c.keyword);
+            }
+            if (c.type === "BUSINESS_RULE" && c.pattern && c.action) {
+              saveCorrectionMemory(finalVendor, c.pattern, c.action);
+              increaseConfidence(finalVendor, c.pattern);
+            }
+          }
+        }
+      }
+
+      res.json({ success: true, message: "Invoice updated and memory triggered" });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   /* =====================================================

@@ -435,3 +435,47 @@ export function saveProcessedInvoice(data: any) {
     ]
   );
 }
+
+export function getUserInvoiceById(id: number): Promise<any> {
+  return new Promise((resolve, reject) => {
+    db.get(`SELECT * FROM user_invoices WHERE id = ?`, [id], (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
+export function updateUserInvoice(
+  id: number,
+  data: {
+    vendor?: string;
+    invoiceNumber?: string;
+    status?: string;
+    reasoning?: string;
+    corrections?: string;
+  }
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.run(
+      `UPDATE user_invoices 
+       SET vendor = COALESCE(?, vendor),
+           invoiceNumber = COALESCE(?, invoiceNumber),
+           status = COALESCE(?, status),
+           reasoning = COALESCE(?, reasoning),
+           corrections = COALESCE(?, corrections)
+       WHERE id = ?`,
+      [
+        data.vendor !== undefined ? data.vendor : null,
+        data.invoiceNumber !== undefined ? data.invoiceNumber : null,
+        data.status !== undefined ? data.status : null,
+        data.reasoning !== undefined ? data.reasoning : null,
+        data.corrections !== undefined ? data.corrections : null,
+        id
+      ],
+      (err) => {
+        if (err) reject(err);
+        else resolve();
+      }
+    );
+  });
+}

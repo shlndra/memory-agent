@@ -878,6 +878,24 @@
   </div>
 </div>
 
+<!-- ─── USER INVOICE DETAIL DRAWER ─── -->
+<div class="drawer-overlay" id="user-drawer-overlay" onclick="closeUserDrawer()"></div>
+<div class="drawer" id="user-detail-drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title" id="user-drawer-title">Review User Invoice</div>
+      <div class="drawer-sub" id="user-drawer-sub">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeUserDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="user-drawer-body">
+    <!-- populated by JS -->
+  </div>
+  <div class="drawer-actions" id="user-drawer-actions" style="border-top:1px solid var(--border);padding:16px 24px;background:var(--cream);display:flex;justify-content:flex-end;">
+    <!-- populated by JS -->
+  </div>
+</div>
+
 <!-- ─── TOASTS ─── -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -1607,13 +1625,15 @@ function renderActivityPanel() {
             <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Confidence</th>
             <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Status</th>
             <th style="padding:10px 16px;text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Uploaded</th>
+            <th style="padding:10px 16px;text-align:right;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500">Action</th>
           </tr>
         </thead>
         <tbody>
-          ${acts.length === 0 ? '<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--muted)">No user uploads yet</td></tr>' :
+          ${acts.length === 0 ? '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--muted)">No user uploads yet</td></tr>' :
             acts.map(a => {
               const pct = Math.round((a.confidence||0)*100);
-              const statusColor = a.status==='auto'?'var(--green)':a.status==='duplicate'?'var(--accent)':'var(--gold)';
+              const isPending = a.status === 'review';
+              const statusColor = a.status==='auto'||a.status==='approved'?'var(--green)':a.status==='duplicate'?'var(--accent)':'var(--gold)';
               return `<tr style="border-bottom:1px solid var(--cream)">
                 <td style="padding:10px 16px;font-weight:500">${a.username || a.email || '—'}</td>
                 <td style="padding:10px 16px">${a.filename || '—'}</td>
@@ -1621,7 +1641,13 @@ function renderActivityPanel() {
                 <td style="padding:10px 16px;font-family:var(--mono);font-size:12px">${a.invoiceNumber || '—'}</td>
                 <td style="padding:10px 16px">${pct}%</td>
                 <td style="padding:10px 16px"><span style="padding:2px 8px;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:600;color:${statusColor}">${a.status || '—'}</span></td>
-                <td style="padding:10px 16px;font-size:12px;color:var(--muted)">${a.uploadedAt ? new Date(a.uploadedAt+'Z').toLocaleDateString() : '—'}</td>
+                <td style="padding:10px 16px;font-size:12px;color:var(--muted)">${a.uploadedAt ? new Date(a.uploadedAt.replace(' ', 'T')+'Z').toLocaleDateString() : '—'}</td>
+                <td style="padding:10px 16px;text-align:right">
+                  ${isPending
+                    ? `<button class="btn btn-primary" onclick="openUserInvoiceReview(${a.id})" style="font-size:11px;padding:3px 10px;background:var(--accent);border-color:var(--accent)">⚠ Review</button>`
+                    : `<button class="btn btn-outline" onclick="openUserInvoiceReview(${a.id})" style="font-size:11px;padding:3px 10px;border-color:var(--border);color:var(--ink)">View</button>`
+                  }
+                </td>
               </tr>`;
             }).join('')
           }
@@ -1631,6 +1657,167 @@ function renderActivityPanel() {
   `;
 
   document.getElementById('main-content').appendChild(panel);
+}
+
+/* ════════════════════════════════════════════
+   ADMIN: REVIEW USER INVOICE
+════════════════════════════════════════════ */
+let activeReviewInvoice = null;
+
+function openUserInvoiceReview(id) {
+  const inv = allActivity.find(a => a.id === id);
+  if (!inv) return;
+  activeReviewInvoice = inv;
+
+  document.getElementById('user-drawer-title').textContent = `Review: ${inv.filename || 'Invoice'}`;
+  document.getElementById('user-drawer-sub').textContent = `Uploaded by user: ${inv.username || inv.email || '—'}`;
+
+  let proposed = [];
+  try {
+    proposed = typeof inv.corrections === 'string' ? JSON.parse(inv.corrections) : (inv.corrections || []);
+  } catch (e) {
+    proposed = [];
+  }
+
+  let correctionsHtml = '<div style="color:var(--muted);font-size:13px">No corrections proposed by the engine</div>';
+  if (proposed.length > 0) {
+    correctionsHtml = proposed.map(c => {
+      if (typeof c === 'string') {
+        return `<div class="correction-chip" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:4px 10px;background:rgba(200,64,26,.06);border:1px solid rgba(200,64,26,.15);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--accent)">${c}</div>`;
+      }
+      if (c.type === 'FIELD_EXTRACTION') {
+        return `<div class="correction-chip" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:4px 10px;background:rgba(200,64,26,.06);border:1px solid rgba(200,64,26,.15);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--accent)">
+                  💡 Found field: "${c.keyword}" &rarr; <b>${c.field}</b>
+                </div>`;
+      }
+      if (c.type === 'BUSINESS_RULE') {
+        return `<div class="correction-chip" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:4px 10px;background:rgba(37,99,168,.06);border:1px solid rgba(37,99,168,.15);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--accent2)">
+                  ⚙️ Applied rule: "${c.pattern}" &rarr; <b>${c.action}</b>
+                </div>`;
+      }
+      return `<div class="correction-chip" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:4px 10px;background:rgba(10,12,16,.04);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:12px">${JSON.stringify(c)}</div>`;
+    }).join('');
+  }
+
+  const confidencePct = Math.round((inv.confidence || 0) * 100);
+
+  let bodyHtml = `
+    <div style="display:flex;flex-direction:column;gap:20px;padding:4px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--cream);border-radius:8px;border:1px solid var(--border)">
+        <div>
+          <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">STATUS</span>
+          <div style="font-weight:700;text-transform:uppercase;color:${inv.status==='auto'||inv.status==='approved'?'var(--green)':inv.status==='duplicate'?'var(--accent)':'var(--gold)'}">${inv.status || 'review'}</div>
+        </div>
+        <div style="text-align:right">
+          <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">CONFIDENCE</span>
+          <div style="font-weight:700;font-size:16px">${confidencePct}%</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-weight:600;font-size:14px;border-bottom:1px solid var(--border);padding-bottom:6px;color:var(--ink)">✏️ Correct Extracted Fields</div>
+        <div>
+          <label style="font-size:12px;font-family:var(--mono);color:var(--muted)">VENDOR</label>
+          <input type="text" id="user-review-vendor" value="${inv.vendor || ''}" style="width:100%;margin-top:4px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--cream);color:var(--ink);outline:none;font-size:13px" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-family:var(--mono);color:var(--muted)">INVOICE NUMBER</label>
+          <input type="text" id="user-review-invnum" value="${inv.invoiceNumber || ''}" style="width:100%;margin-top:4px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--cream);color:var(--ink);outline:none;font-size:13px" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-family:var(--mono);color:var(--muted)">REASONING / SYSTEM NOTES</label>
+          <textarea id="user-review-reasoning" rows="2" style="width:100%;margin-top:4px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--cream);color:var(--ink);outline:none;font-size:13px;resize:vertical">${inv.reasoning || ''}</textarea>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:600;font-size:14px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:8px;color:var(--ink)">💡 Applied Corrections</div>
+        <div>${correctionsHtml}</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-weight:600;font-size:14px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:8px;color:var(--ink)">📄 Raw Extracted Text</div>
+        <pre style="white-space:pre-wrap;font-family:var(--mono);font-size:11px;background:var(--cream);padding:12px;border-radius:6px;border:1px solid var(--border);max-height:200px;overflow-y:auto;color:var(--ink);text-align:left">${inv.rawText || '(No text extracted)'}</pre>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('user-drawer-body').innerHTML = bodyHtml;
+
+  let actionsHtml = `<button class="btn btn-outline" onclick="closeUserDrawer()">Close</button>`;
+  if (inv.status === 'review') {
+    actionsHtml += `<button class="btn btn-primary" onclick="saveUserInvoiceReview('approved')" style="margin-left:8px;background:var(--green);border-color:var(--green)">✓ Approve</button>`;
+  } else {
+    actionsHtml += `<button class="btn btn-primary" onclick="saveUserInvoiceReview('${inv.status}')" style="margin-left:8px">Save Changes</button>`;
+  }
+  document.getElementById('user-drawer-actions').innerHTML = actionsHtml;
+
+  document.getElementById('user-detail-drawer').classList.add('open');
+  document.getElementById('user-drawer-overlay').classList.add('open');
+}
+
+function closeUserDrawer() {
+  document.getElementById('user-detail-drawer').classList.remove('open');
+  document.getElementById('user-drawer-overlay').classList.remove('open');
+  activeReviewInvoice = null;
+}
+
+async function saveUserInvoiceReview(status) {
+  if (!activeReviewInvoice) return;
+
+  const vendorVal = document.getElementById('user-review-vendor').value.trim();
+  const invNumVal = document.getElementById('user-review-invnum').value.trim();
+  const reasoningVal = document.getElementById('user-review-reasoning').value.trim();
+
+  const correctionsList = [];
+  if (vendorVal !== activeReviewInvoice.vendor) {
+    correctionsList.push({
+      type: 'FIELD_EXTRACTION',
+      keyword: activeReviewInvoice.vendor || 'Unknown',
+      field: 'vendorName',
+      value: vendorVal
+    });
+  }
+
+  let originalProposed = [];
+  try {
+    originalProposed = typeof activeReviewInvoice.corrections === 'string' 
+      ? JSON.parse(activeReviewInvoice.corrections) 
+      : (activeReviewInvoice.corrections || []);
+  } catch(e) {}
+
+  const postBody = {
+    vendor: vendorVal,
+    invoiceNumber: invNumVal,
+    status: status,
+    reasoning: reasoningVal || 'Admin manually verified',
+    corrections: originalProposed.length > 0 ? originalProposed : correctionsList
+  };
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/admin/invoices/${activeReviewInvoice.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(postBody)
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      showToast(status === 'approved' ? 'Invoice approved — memory updated ✓' : 'Invoice saved ✓', 'success');
+      closeUserDrawer();
+      await fetchAdminData();
+      renderActivityPanel();
+      if (typeof fetchStats === 'function') fetchStats();
+      if (typeof loadMemoryData === 'function') loadMemoryData();
+    } else {
+      showToast(data.error || 'Failed to update invoice', 'error');
+    }
+  } catch(err) {
+    showToast('Network error updating invoice', 'error');
+  }
 }
 
 function sortByCol(col) { applyFilters(); }
