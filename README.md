@@ -1,6 +1,7 @@
 # 🧠 Memory-Driven Invoice Agent
 
-**Live Demo:** [https://prismatic-heliotrope-707840.netlify.app](https://prismatic-heliotrope-707840.netlify.app)
+*   **Live Web App**: [https://prismatic-heliotrope-707840.netlify.app](https://prismatic-heliotrope-707840.netlify.app)
+*   **Live API Server**: [https://memory-agent-production-8dd2.up.railway.app](https://memory-agent-production-8dd2.up.railway.app)
 
 ## Overview
 
@@ -157,6 +158,23 @@ npm install
 ```bash
 npx ts-node src/index.ts
 ```
+
+### Production Deployment
+
+The application is configured for a cloud-hosted hybrid deployment:
+
+#### 1. Frontend (Netlify)
+*   **Live App**: [https://prismatic-heliotrope-707840.netlify.app](https://prismatic-heliotrope-707840.netlify.app)
+*   Deploys automatically from the `main` branch.
+*   Uses `netlify.toml` to compile static HTML pages and set up redirects.
+
+#### 2. Backend API (Railway)
+*   **Live API**: `https://memory-agent-production-8dd2.up.railway.app`
+*   Compiles TypeScript and runs the Express API server 24/7.
+*   **Data Persistence**: Attached to a persistent volume disk mounted at `/app/data` to preserve the SQLite database and uploaded invoice files.
+*   **Environment Variables Configured**:
+    *   `DATABASE_PATH`: `/app/data/memory.db` (directs the SQLite database to the persistent volume)
+    *   `UPLOAD_PATH`: `/app/data/uploads` (directs the uploaded invoice files to the persistent volume)
 
 ---
 
